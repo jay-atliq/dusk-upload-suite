@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Upload as UploadIcon, Sparkles } from 'lucide-react';
-import { FileUploader } from '@/components/FileUploader';
-import { ResponseHistory } from '@/components/ResponseHistory';
-import { uploadImages } from '@/services/api';
-import { getStoredResponses, addResponseToStorage } from '@/utils/storage';
-import { ApiResponse, UploadResponse } from '@/types';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { Upload as UploadIcon, Sparkles } from "lucide-react";
+import { FileUploader } from "@/components/FileUploader";
+import { ResponseHistory } from "@/components/ResponseHistory";
+import { uploadImages } from "@/services/api";
+import { getStoredResponses, addResponseToStorage } from "@/utils/storage";
+import { ApiResponse } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [responses, setResponses] = useState<ApiResponse[]>([]);
@@ -20,49 +20,28 @@ const Index = () => {
 
   const handleUpload = async (files: File[]) => {
     setIsUploading(true);
-    
+
     try {
       // Upload files to API
-      const uploadResponse: UploadResponse = await uploadImages(files);
-      
-      // Process the response and store it
-      const processedResponse = {
-        imageUrls: uploadResponse.imageUrls || [],
-        data: { ...uploadResponse },
-        success: true,
-      };
-
-      // Remove imageUrls from data to avoid duplication
-      delete processedResponse.data.imageUrls;
+      const uploadResponse = await uploadImages(files);
 
       // Add to storage and update state
-      const storedResponse = addResponseToStorage(processedResponse);
-      setResponses(prev => [storedResponse, ...prev]);
+      const newResponse = addResponseToStorage(uploadResponse);
+      setResponses((prev) => [...newResponse, ...prev]);
 
       toast({
         title: "Upload successful!",
-        description: `Successfully uploaded ${files.length} image${files.length !== 1 ? 's' : ''}.`,
+        description: `Successfully uploaded ${files.length} image${
+          files.length !== 1 ? "s" : ""
+        }.`,
       });
-
     } catch (error) {
-      console.error('Upload failed:', error);
-      
-      // Store failed response
-      const failedResponse = {
-        imageUrls: [],
-        data: { 
-          error: error instanceof Error ? error.message : 'Unknown error occurred',
-          files: files.map(f => ({ name: f.name, size: f.size, type: f.type }))
-        },
-        success: false,
-      };
-
-      const storedResponse = addResponseToStorage(failedResponse);
-      setResponses(prev => [storedResponse, ...prev]);
+      console.error("Upload failed:", error);
 
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred.",
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred.",
         variant: "destructive",
       });
     } finally {
@@ -104,7 +83,6 @@ const Index = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-8">
-          
           {/* Upload Section */}
           <section>
             <div className="mb-6">
@@ -113,21 +91,17 @@ const Index = () => {
                 Select or drag & drop your images to upload them to the server.
               </p>
             </div>
-            
-            <FileUploader 
-              onUpload={handleUpload}
-              isUploading={isUploading}
-            />
+
+            <FileUploader onUpload={handleUpload} isUploading={isUploading} />
           </section>
 
           {/* History Section */}
           <section>
-            <ResponseHistory 
+            <ResponseHistory
               responses={responses}
               onClear={handleClearHistory}
             />
           </section>
-
         </div>
       </div>
     </div>
